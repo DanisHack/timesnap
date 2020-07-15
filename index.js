@@ -262,10 +262,35 @@ module.exports = function (config) {
                 log('Page prepared');
               });
             }
+
+            const withTimeout = (millis, promise) => {
+                const timeout = new Promise((resolve, reject) =>
+                    setTimeout(
+                        () => reject(`Timed out after ${millis} ms.`),
+                        millis));
+                return Promise.race([
+                    promise,
+                    timeout
+                ]);
+            };
+
+
             if (capturer.capture) {
-              p = p.then(function () {
-                return capturer.capture(config, marker.data.frameCount, framesToCapture);
-              });
+              log(" Capturer initaited ");
+
+              try {
+
+                p = p.then(function () {
+                  return capturer.capture(config, marker.data.frameCount, framesToCapture);
+                });
+
+                withTimeout(60000, p);
+              }
+              catch(error) {
+                log(" Error in capturing: "+ error);
+                throw error;
+              }
+              
             }
           } else if (marker.type === 'Only Animate') {
             p = timeHandler.goToTimeAndAnimate(browserFrames, marker.time);
